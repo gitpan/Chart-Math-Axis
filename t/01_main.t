@@ -1,12 +1,12 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 
 # Formal testing for Chart::Math::Axis
 
 use strict;
-use lib '../../../../modules'; # For development testing
+use lib '../../modules'; # For development testing
 use lib '../lib'; # For installation testing
 use UNIVERSAL 'isa';
-use Test::Simple tests => 167;
+use Test::More tests => 167;
 use Math::BigInt;
 use Math::BigFloat;
 
@@ -24,7 +24,7 @@ BEGIN {
 BEGIN {
 	ok( $] >= 5.005, "Your perl is new enough" );
 }
-	
+
 
 
 
@@ -248,7 +248,7 @@ sub test_this {
 	my $Axis = shift;
 	my $description = shift;
 	my $test = shift;
-	
+
 	ok( isa( $Axis, 'Chart::Math::Axis' ), "Object type is correct for $description" );
 	ok( $Axis->max == $test->[0], "->max returns correct for $description" );
 	ok( $Axis->min == $test->[1], "->min returns correct for $description" );
@@ -261,7 +261,7 @@ sub test_this {
 sub all_correct {
 	my $Axis = shift;
 	my $test = shift;
-	
+
 	return undef unless isa( $Axis, 'Chart::Math::Axis' );
 	return undef unless $Axis->max == $test->[0];
 	return undef unless $Axis->min == $test->[1];
@@ -269,7 +269,7 @@ sub all_correct {
 	return undef unless $Axis->bottom == $test->[3];
 	return undef unless $Axis->interval_size == $test->[4];
 	return undef unless $Axis->ticks == $test->[5];
-	
+
 	return 1;
 }
 

@@ -9,12 +9,13 @@ use strict;
 use UNIVERSAL 'isa';
 
 # Needed for a bunch of the internal math
-use Math::BigInt;
-use Math::BigFloat;
+use Clone          ();
+use Math::BigInt   ();
+use Math::BigFloat ();
 
 use vars qw{$VERSION};
 BEGIN {
-	$VERSION = 0.1;
+	$VERSION = 0.2;
 }
 
 
@@ -27,19 +28,16 @@ BEGIN {
 # Constructor is passed a list of values, which should be the entire set of
 # values on the Y axis.
 sub new {
-	my $class = shift;	
-	
 	# Create the object
-	my $self = {
+	my $self = bless {
 		max               => undef, # Data maximum value
 		min               => undef, # Data minimum value
 		top               => undef, # Top value on the axis
 		bottom            => undef, # Bottom value on the axis
 		maximum_intervals => 10,    # Maximum number of intervals
 		interval_size     => undef, # The interval size		
-		};
-	bless $self, $class;
-	
+		}, shift;
+
 	# If we got some argument
 	if ( @_ ) {
 		# Add the data from the data set.
@@ -47,7 +45,7 @@ sub new {
 		$self->add_data( @_ ) or return undef;
 	}
 	
-	return $self;
+	$self;
 }
 
 # Data access methods
@@ -64,40 +62,35 @@ sub ticks {
 	return undef unless defined $self->{max};
 	return undef unless defined $self->{min};
 	return undef unless defined $self->{interval_size};
-	
+
 	# Calculate the ticks
 	return ($self->{top} - $self->{bottom}) / $self->{interval_size};
 }
 
-# Method to force the scale to include the zero line
-sub include_zero { 
-	my $self = shift;
-	
-	# Adjust the maximum/minimum to include zero
-	return $self->add_data( 0 );
-}
+# Method to force the scale to include the zero line.
+sub include_zero { shift->add_data( 0 ) }
 
 # Method to add additional data elements to the data set
 # The object doesn't need to store all the data elements, 
 # just the maximum and minimum values
 sub add_data {
 	my $self = shift;
-	
+
 	# Make sure they passed at least one data element
 	return undef unless @_;
-	
+
 	# Handle the case of when this is the first data
 	$self->{max} = $_[0] unless defined $self->{max};
 	$self->{min} = $_[0] unless defined $self->{min};
-	
+
 	# Go through and adjust the max and min as needed
 	foreach ( @_ ) {
 		$self->{max} = $_ if $_ > $self->{max};
 		$self->{min} = $_ if $_ < $self->{min};
 	}
-	
+
 	# Recalculate
-	return $self->_calculate;
+	$self->_calculate;
 }
 
 # Change the interval quantity.
@@ -109,33 +102,30 @@ sub add_data {
 # can specify a maximum number of ticks not to exceed.
 sub set_maximum_intervals {
 	my $self = shift;
-	my $quantity = shift;
-	return undef unless $quantity > 1;
-	
+	my $quantity = $_[0] > 1 ? shift : return undef;
+
 	# Set the interval quantity
 	$self->{maximum_intervals} = $quantity;
-	
+
 	# Recalculate
-	return $self->_calculate;
+	$self->_calculate;
 }
-	
+
 # Automatically apply the axis values to objects of different types.
 # Currently only GD::Graph objects are supported.
 sub apply_to {
 	my $self = shift;
-	my $apply_to = shift;
-	
-	if ( isa( $apply_to, 'GD::Graph::axestype' ) ) {
-		$apply_to->set( 
-			y_max_value       => $self->top,
-			y_min_value       => $self->bottom,
-			y_tick_number     => $self->ticks,
-			);
-	} else {
-		die "Tried to apply scale to a graph type I don't know";
+	unless ( isa( $_[0], 'GD::Graph::axestype' ) ) {
+		die "Tried to apply scale to an unknown graph type";
 	}
-	
-	return 1;
+
+	shift->set( 
+		y_max_value       => $self->top,
+		y_min_value       => $self->bottom,
+		y_tick_number     => $self->ticks,
+		);
+
+	1;
 }
 
 
@@ -148,7 +138,7 @@ sub apply_to {
 # This method implements the main part of the algorithm
 sub _calculate {
 	my $self = shift;
-	
+
 	# Max sure we have a maximum, minimum, and interval quantity
 	return undef unless defined $self->{max};
 	return undef unless defined $self->{min};
@@ -156,20 +146,20 @@ sub _calculate {
 
 	# Pass off the special max == min case to the dedicated method
 	return $self->_calculate_single() if $self->{max} == $self->{min};
-	
+
 	# Get some math objects for the max and min
 	my $Maximum = Math::BigFloat->new( $self->{max} );
 	my $Minimum = Math::BigFloat->new( $self->{min} );
 	return undef unless (defined $Maximum or defined $Minimum);
-	
+
 	# Get the magnitude of the numbers
 	my $max_magnitude = $self->_order_of_magnitude( $Maximum );
 	my $min_magnitude = $self->_order_of_magnitude( $Minimum );
-	
+
 	# Find the largest order of magnitude
 	my $magnitude = $max_magnitude > $min_magnitude
 		? $max_magnitude : $min_magnitude;
-	
+
 	# Create some starting values based on this
 	my $Interval = Math::BigFloat->new( 10 ** ($magnitude + 1) );
 	my $Top = $self->_round_top( $Maximum, $Interval );
@@ -177,21 +167,21 @@ sub _calculate {
 	$self->{top} = $Top->bstr;
 	$self->{bottom} = $Bottom->bstr;
 	$self->{interval_size} = $Interval->bstr;
-		
+
 	# Loop as we tighten the integer until the correct number of
 	# intervals are found.
 	my $loop = 0;
 	while ( 1 ) {
 		# Descend to the next interval
 		my $NextInterval = $self->_reduce_interval( $Interval ) or return undef;
-		
+
 		# Get the rounded values for the maximum and minimum
 		$Top = $self->_round_top( $Maximum, $NextInterval );
 		$Bottom = $self->_round_bottom( $Minimum, $NextInterval );
-	
+
 		# How many intervals fit into this range?
 		my $NextIntervalQuantity = ( $Top - $Bottom ) / $NextInterval;
-		
+
 		# If the number of intervals for the next interval is higher
 		# then the maximum number of allowed intervals, use the 
 		# current interval
@@ -199,13 +189,13 @@ sub _calculate {
 			# Finished, return.
 			return 1;
 		}
-		
+
 		# Set the Interval to the next interval
 		$Interval = $NextInterval;
 		$self->{top} = $Top->bstr;
 		$self->{bottom} = $Bottom->bstr;
 		$self->{interval_size} = $Interval->bstr;
-		
+
 		# Infinite loop protection
 		return undef if ++$loop > 100;
 	}	
@@ -219,7 +209,7 @@ sub _calculate_single {
 	return undef unless defined $self->{max};
 	return undef unless defined $self->{min};
 	return undef unless defined $self->{maximum_intervals};
-	
+
 	# Handle the super special case of one value of zero
 	if ( $self->{max} == 0 ) {
 		$self->{top} = 1;
@@ -227,7 +217,7 @@ sub _calculate_single {
 		$self->{interval_size} = 1;
 		return 1;
 	}
-	
+
 	# When we only have one value ( that's not zero ), we can get
 	# a top and bottom by rounding up and down at the value's order of magnitude
 	my $Value = Math::BigFloat->new( $self->{max} );
@@ -236,7 +226,7 @@ sub _calculate_single {
 	$self->{top} = $self->_round_top( $Value, $Interval )->bstr;
 	$self->{bottom} = $self->_round_bottom( $Value, $Interval )->bstr;
 	$self->{interval_size} = $Interval->bstr;
-	
+
 	# Tighten the same way we do in the normal _calculate method
 	# but don't recalculate the top and bottom
 	# Loop as we tighten the integer until the correct number of
@@ -246,16 +236,16 @@ sub _calculate_single {
 		# Descend to the next interval
 		my $NextInterval = $self->_reduce_interval( $Interval ) or return undef;
 		my $NextIntervalQuantity = ( $self->{top} - $self->{bottom} ) / $NextInterval;
-		
+
 		if ( $NextIntervalQuantity > $self->{maximum_intervals} ) {
 			# Finished, return.
 			return 1;
 		}
-		
+
 		# Set the Interval to the next interval
 		$Interval = $NextInterval;
 		$self->{interval_size} = $Interval->bstr;
-		
+
 		# Infinite loop protection
 		return undef if ++$loop > 100;
 	}	
@@ -264,23 +254,22 @@ sub _calculate_single {
 # For a given interval, work out what the next one down should be
 sub _reduce_interval {
 	my $class = shift;
-	my $Interval = shift;
-	$Interval = isa( $Interval, 'Math::BigFloat' )
-		? $Interval->copy
-		: Math::BigFloat->new( $Interval );
-	
+	my $Interval = isa( $_[0], 'Math::BigFloat' )
+		? Clone::clone( shift ) # Don't modify the original
+		: Math::BigFloat->new( shift );
+
 	# If the mantissa is 5, reduce it to 2
 	if ( $Interval->mantissa == 5 ) {
 		return $Interval * (2 / 5);
-	
+
 	# If the mantissa is 2, reduce it to 1
 	} elsif ( $Interval->mantissa == 2 ) {
 		return $Interval * (1 / 2);
-		
+
 	# If the mantissa is 1, make it 5 and subtract one from the exponent
 	} elsif ( $Interval->mantissa == 1 ) {
 		return $Interval * (5 / 10);
-		
+
 	} else {
 		# We got a problem here.
 		# This is not a value we should expect.
@@ -292,11 +281,10 @@ sub _reduce_interval {
 # Not the same as exponent.
 sub _order_of_magnitude {
 	my $class = shift;
-	my $BigFloat = shift;
-	$BigFloat = isa( $BigFloat, 'Math::BigFloat' )
-		? $BigFloat->copy  # Don't modify the original
-		: Math::BigFloat->new( $BigFloat );
-		
+	my $BigFloat = isa( $_[0], 'Math::BigFloat' )
+		? Clone::clone( shift ) # Don't modify the original
+		: Math::BigFloat->new( shift );
+
 	# Zero is special, and won't work with the math below
 	return 0 if $BigFloat == 0;
 	
@@ -305,45 +293,39 @@ sub _order_of_magnitude {
 		+ $BigFloat->exponent - 1;
 	
 	# Return it as a normal perl int
-	return $Ordinality->bstr;	
+	$Ordinality->bstr;	
 }
 
 # Two rounding methods to handle the special rounding cases we need
 sub _round_top {
 	my $class = shift;
-	my $Number = shift;
+	my $Number = isa( $_[0], 'Math::BigFloat' )
+		? Clone::clone( shift ) # Don't modify the original
+		: Math::BigFloat->new( shift );
 	my $Interval = shift;
-	$Number = isa( $Number, 'Math::BigFloat' )
-		? $Number->copy
-		: Math::BigFloat->new( $Number );
-	
+
 	# Round up, or go one interval higher if exact
 	$Number = $Number->bdiv( $Interval );  # Divide
 	$Number = $Number->bfloor->binc;       # Round down and add 1
 	$Number = $Number * $Interval;         # Re-multiply
-
-	return $Number;
 }	
 
 sub _round_bottom {
 	my $class = shift;
-	my $Number = shift;
+	my $Number = isa( $_[0], 'Math::BigFloat' )
+		? Clone::clone( shift ) # Don't modify the original
+		: Math::BigFloat->new( shift );
 	my $Interval = shift;
-	$Number = isa( $Number, 'Math::BigFloat' )
-		? $Number->copy
-		: Math::BigFloat->new( $Number );
-	
+
 	# In the special case the number is zero, don't round down.
 	# If the graph is already anchored to zero at the bottom, we
 	# don't want to show down to -1 * $Interval.
 	return $Number if $Number == 0;
-	
+
 	# Round down, or go one interval lower if exact.
 	$Number = $Number->bdiv( $Interval );  # Divide
 	$Number = $Number->bceil->bdec;        # Round up and subtract 1
 	$Number = $Number * $Interval;         # Re-multiply
-	
-	return $Number;
 }
 
 1;	
@@ -362,7 +344,7 @@ Chart::Math::Axis - Implements an algorithm to find good values for chart axis
   my $Axis = Chart::Math::Axis->new();
 
   # Provide is some data to calculate on
-  $Axis->add_date( @dataset );
+  $Axis->add_data( @dataset );
 
   # Get the values for the axis
   print "Top of axis: " . $Axis->top . "\n";

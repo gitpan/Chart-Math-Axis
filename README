@@ -7,7 +7,7 @@ SYNOPSIS
       my $Axis = Chart::Math::Axis->new();
 
       # Provide is some data to calculate on
-      $Axis->add_date( @dataset );
+      $Axis->add_data( @dataset );
 
       # Get the values for the axis
       print "Top of axis: " . $Axis->top . "\n";
