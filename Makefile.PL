@@ -4,9 +4,9 @@ WriteMakefile(
 	'NAME'         => 'Chart::Math::Axis',
 	'VERSION_FROM' => 'lib/Chart/Math/Axis.pm',
 	'PREREQ_PM'    => {
-		'Clone'          => 0,
-		'Math::BigInt'   => 0,
-		'Math::BigFloat' => 1.04,   # Needs bdiv()
+		'Clone'          => 0.13,
+		'Math::BigInt'   => 1.70,
+		'Math::BigFloat' => 1.44,   # Needs bdiv()
 		'Test::More'     => 0,
 	},
 	($] >= 5.005) ? (

@@ -15,7 +15,7 @@ use Math::BigFloat ();
 
 use vars qw{$VERSION};
 BEGIN {
-	$VERSION = 0.2;
+	$VERSION = 0.3;
 }
 
 

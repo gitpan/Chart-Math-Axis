@@ -1,0 +1,14 @@
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Chart-Math-Axis
+version:      0.3
+version_from: lib/Chart/Math/Axis.pm
+installdirs:  site
+requires:
+    Clone:                         0.13
+    Math::BigFloat:                1.44
+    Math::BigInt:                  1.7
+    Test::More:                    0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.16
