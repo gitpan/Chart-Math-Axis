@@ -1,0 +1,7 @@
+Changes
+LICENSE
+MANIFEST
+Makefile.PL
+README
+lib/Chart/Math/Axis.pm
+t/01_main.t
