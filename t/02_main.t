@@ -1,51 +1,32 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -T
 
-# Formal testing for Chart::Math::Axis
+# Full testing for Chart::Math::Axis
 
 use strict;
-use lib '../../modules'; # For development testing
-use lib '../lib'; # For installation testing
-use UNIVERSAL 'isa';
-use Test::More tests => 167;
+BEGIN {
+	$|  = 1;
+	$^W = 1;
+}
+
+use Test::More tests => 165;
 use Math::BigInt;
 use Math::BigFloat;
-
-# Set up any needed globals
-use vars qw{$loaded};
-BEGIN {
-	$loaded = 0;
-	$| = 1;
-}
-
-
-
-
-# Check their perl version
-BEGIN {
-	ok( $] >= 5.005, "Your perl is new enough" );
-}
-
-
-
-
-
-# Does the module load
-END { ok( 0, 'Chart::Math::Axis loads' ) unless $loaded; }
 use Chart::Math::Axis;
-$loaded = 1;
-ok( 1, 'Chart::Math::Axis loads' );
 
 
 
 
-# Prepare
-my $Interval = Math::BigFloat->new( 5 );
-my $First = Math::BigFloat->new( 4 );
-my $Second = Math::BigFloat->new( 1.3 );
-my $Third = Math::BigFloat->new( 0 );
-my $Fourth = Math::BigFloat->new( 0.001 );
-my $Fifth = Math::BigFloat->new( -1.3 );
-my $Sixth = Math::BigFloat->new( -5 );
+
+#####################################################################
+# Preparation
+
+my $Interval = Math::BigFloat->new( 5     );
+my $First    = Math::BigFloat->new( 4     );
+my $Second   = Math::BigFloat->new( 1.3   );
+my $Third    = Math::BigFloat->new( 0     );
+my $Fourth   = Math::BigFloat->new( 0.001 );
+my $Fifth    = Math::BigFloat->new( -1.3  );
+my $Sixth    = Math::BigFloat->new( -5    );
 
 
 
@@ -131,10 +112,10 @@ ok( Chart::Math::Axis->_order_of_magnitude( 50000 ) == 4, "->_order_of_magnitude
 # Chart::Math::Axis->_reduce_interval
 my $Reduced1 = Chart::Math::Axis->_reduce_interval( $Interval );
 my $Reduced2 = Chart::Math::Axis->_reduce_interval( 5 );
-ok( isa( $Interval, 'Math::BigFloat' ), "->_reduce_interval does not break argument" );
+isa_ok( $Interval, 'Math::BigFloat' );
 ok( $Interval == 5, "->_reduce_interval doesn't alter argument" );
-ok( isa( $Reduced1, 'Math::BigFloat' ), "->_reduce_interval returns a Math::BigFloat" );
-ok( isa( $Reduced2, 'Math::BigFloat' ), "->_reduce_interval with raw number returns a Math::BigFloat" );
+isa_ok( $Reduced1, 'Math::BigFloat' );
+isa_ok( $Reduced2, 'Math::BigFloat' );
 ok( $Reduced1 == 2, '->_reduce_interval( 5 )' );
 ok( $Reduced2 == 2, '->_reduce_interval( 5 )' );
 ok( Chart::Math::Axis->_reduce_interval( 100 ) == 50, '->_reduce_interval( 100 )' );
@@ -154,7 +135,7 @@ ok( Chart::Math::Axis->_reduce_interval( 0.1 ) == 0.05, '->_reduce_interval( 0.1
 #####################################################################
 # Test the constructor and basic access methods
 my $Axis = Chart::Math::Axis->new();
-ok( isa( $Axis, 'Chart::Math::Axis' ), '->new returns correct object type for no arguments' );
+isa_ok( $Axis, 'Chart::Math::Axis' );
 ok( ! defined $Axis->max, '->max returns undef for empty object' );
 ok( ! defined $Axis->min, '->min returns undef for empty object' );
 ok( ! defined $Axis->top, '->top returns undef for empty object' );
@@ -249,7 +230,7 @@ sub test_this {
 	my $description = shift;
 	my $test = shift;
 
-	ok( isa( $Axis, 'Chart::Math::Axis' ), "Object type is correct for $description" );
+	isa_ok( $Axis, 'Chart::Math::Axis' );
 	ok( $Axis->max == $test->[0], "->max returns correct for $description" );
 	ok( $Axis->min == $test->[1], "->min returns correct for $description" );
 	ok( $Axis->top == $test->[2], "->top returns correct for $description" );
@@ -262,7 +243,7 @@ sub all_correct {
 	my $Axis = shift;
 	my $test = shift;
 
-	return undef unless isa( $Axis, 'Chart::Math::Axis' );
+	return undef unless $Axis->isa('Chart::Math::Axis');
 	return undef unless $Axis->max == $test->[0];
 	return undef unless $Axis->min == $test->[1];
 	return undef unless $Axis->top == $test->[2];

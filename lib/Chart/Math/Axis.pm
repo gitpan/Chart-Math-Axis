@@ -5,17 +5,18 @@ package Chart::Math::Axis;
 # That is, given a data set, find a maximum, minimum and interval values
 # that will provide the most attractive display for a graph.
 
+use 5.005;
 use strict;
-use UNIVERSAL 'isa';
 
 # Needed for a bunch of the internal math
-use Clone          ();
+use Storable       ();
 use Math::BigInt   ();
 use Math::BigFloat ();
+use Params::Util   qw( _INSTANCE );
 
 use vars qw{$VERSION};
 BEGIN {
-	$VERSION = 0.3;
+	$VERSION = '1.00';
 }
 
 
@@ -49,12 +50,12 @@ sub new {
 }
 
 # Data access methods
-sub max               { $_[0]->{max} }
-sub min               { $_[0]->{min} }
-sub top               { $_[0]->{top} }
-sub bottom            { $_[0]->{bottom} }
+sub max               { $_[0]->{max}               }
+sub min               { $_[0]->{min}               }
+sub top               { $_[0]->{top}               }
+sub bottom            { $_[0]->{bottom}            }
 sub maximum_intervals { $_[0]->{maximum_intervals} }
-sub interval_size     { $_[0]->{interval_size} }
+sub interval_size     { $_[0]->{interval_size}     }
 
 # Return the actual number of ticks that should be needed
 sub ticks {
@@ -68,7 +69,7 @@ sub ticks {
 }
 
 # Method to force the scale to include the zero line.
-sub include_zero { shift->add_data( 0 ) }
+sub include_zero { shift->add_data(0) }
 
 # Method to add additional data elements to the data set
 # The object doesn't need to store all the data elements, 
@@ -101,7 +102,7 @@ sub add_data {
 # The point being that if your labels take up X width, you
 # can specify a maximum number of ticks not to exceed.
 sub set_maximum_intervals {
-	my $self = shift;
+	my $self     = shift;
 	my $quantity = $_[0] > 1 ? shift : return undef;
 
 	# Set the interval quantity
@@ -115,14 +116,14 @@ sub set_maximum_intervals {
 # Currently only GD::Graph objects are supported.
 sub apply_to {
 	my $self = shift;
-	unless ( isa( $_[0], 'GD::Graph::axestype' ) ) {
+	unless ( _INSTANCE($_[0], 'GD::Graph::axestype') ) {
 		die "Tried to apply scale to an unknown graph type";
 	}
 
 	shift->set( 
-		y_max_value       => $self->top,
-		y_min_value       => $self->bottom,
-		y_tick_number     => $self->ticks,
+		y_max_value   => $self->top,
+		y_min_value   => $self->bottom,
+		y_tick_number => $self->ticks,
 		);
 
 	1;
@@ -161,11 +162,11 @@ sub _calculate {
 		? $max_magnitude : $min_magnitude;
 
 	# Create some starting values based on this
-	my $Interval = Math::BigFloat->new( 10 ** ($magnitude + 1) );
-	my $Top = $self->_round_top( $Maximum, $Interval );
-	my $Bottom = $self->_round_bottom( $Minimum, $Interval );
-	$self->{top} = $Top->bstr;
-	$self->{bottom} = $Bottom->bstr;
+	my $Interval           = Math::BigFloat->new( 10 ** ($magnitude + 1) );
+	my $Top                = $self->_round_top( $Maximum, $Interval );
+	my $Bottom             = $self->_round_bottom( $Minimum, $Interval );
+	$self->{top}           = $Top->bstr;
+	$self->{bottom}        = $Bottom->bstr;
 	$self->{interval_size} = $Interval->bstr;
 
 	# Loop as we tighten the integer until the correct number of
@@ -191,9 +192,9 @@ sub _calculate {
 		}
 
 		# Set the Interval to the next interval
-		$Interval = $NextInterval;
-		$self->{top} = $Top->bstr;
-		$self->{bottom} = $Bottom->bstr;
+		$Interval              = $NextInterval;
+		$self->{top}           = $Top->bstr;
+		$self->{bottom}        = $Bottom->bstr;
 		$self->{interval_size} = $Interval->bstr;
 
 		# Infinite loop protection
@@ -212,19 +213,19 @@ sub _calculate_single {
 
 	# Handle the super special case of one value of zero
 	if ( $self->{max} == 0 ) {
-		$self->{top} = 1;
-		$self->{bottom} = 0;
+		$self->{top}           = 1;
+		$self->{bottom}        = 0;
 		$self->{interval_size} = 1;
 		return 1;
 	}
 
 	# When we only have one value ( that's not zero ), we can get
 	# a top and bottom by rounding up and down at the value's order of magnitude
-	my $Value = Math::BigFloat->new( $self->{max} );
-	my $magnitude = $self->_order_of_magnitude( $Value );
-	my $Interval = Math::BigFloat->new( 10 ** $magnitude );
-	$self->{top} = $self->_round_top( $Value, $Interval )->bstr;
-	$self->{bottom} = $self->_round_bottom( $Value, $Interval )->bstr;
+	my $Value              = Math::BigFloat->new( $self->{max} );
+	my $magnitude          = $self->_order_of_magnitude( $Value );
+	my $Interval           = Math::BigFloat->new( 10 ** $magnitude );
+	$self->{top}           = $self->_round_top( $Value, $Interval )->bstr;
+	$self->{bottom}        = $self->_round_bottom( $Value, $Interval )->bstr;
 	$self->{interval_size} = $Interval->bstr;
 
 	# Tighten the same way we do in the normal _calculate method
@@ -253,9 +254,9 @@ sub _calculate_single {
 
 # For a given interval, work out what the next one down should be
 sub _reduce_interval {
-	my $class = shift;
-	my $Interval = isa( $_[0], 'Math::BigFloat' )
-		? Clone::clone( shift ) # Don't modify the original
+	my $class    = shift;
+	my $Interval = _INSTANCE($_[0], 'Math::BigFloat')
+		? Storable::dclone( shift ) # Don't modify the original
 		: Math::BigFloat->new( shift );
 
 	# If the mantissa is 5, reduce it to 2
@@ -281,8 +282,8 @@ sub _reduce_interval {
 # Not the same as exponent.
 sub _order_of_magnitude {
 	my $class = shift;
-	my $BigFloat = isa( $_[0], 'Math::BigFloat' )
-		? Clone::clone( shift ) # Don't modify the original
+	my $BigFloat = _INSTANCE($_[0], 'Math::BigFloat')
+		? Storable::dclone( shift ) # Don't modify the original
 		: Math::BigFloat->new( shift );
 
 	# Zero is special, and won't work with the math below
@@ -299,8 +300,8 @@ sub _order_of_magnitude {
 # Two rounding methods to handle the special rounding cases we need
 sub _round_top {
 	my $class = shift;
-	my $Number = isa( $_[0], 'Math::BigFloat' )
-		? Clone::clone( shift ) # Don't modify the original
+	my $Number = _INSTANCE($_[0], 'Math::BigFloat')
+		? Storable::dclone( shift ) # Don't modify the original
 		: Math::BigFloat->new( shift );
 	my $Interval = shift;
 
@@ -312,8 +313,8 @@ sub _round_top {
 
 sub _round_bottom {
 	my $class = shift;
-	my $Number = isa( $_[0], 'Math::BigFloat' )
-		? Clone::clone( shift ) # Don't modify the original
+	my $Number = _INSTANCE($_[0], 'Math::BigFloat')
+		? Storable::dclone( shift ) # Don't modify the original
 		: Math::BigFloat->new( shift );
 	my $Interval = shift;
 
@@ -394,7 +395,7 @@ The C<bottom> method returns the value that should be the bottom of the axis.
 =head2 maximum_intervals()
 
 Although Chart::Math::Axis can work out scale and intervals, it doesn't know
-how many pixels you might need, how big labels etc are, so it's can't
+how many pixels you might need, how big labels etc are, so it can
 determine the tick density you are going to need. The C<maximum_intervals>
 method returns the current value for the maximum number of ticks the object
 is allowed to have.
@@ -442,9 +443,7 @@ Contact the author
 
 =head1 AUTHOR
 
-        Adam Kennedy ( maintainer )
-        cpan@ali.as
-        http://ali.as/
+Adam Kennedy E<lt>cpan@ali.asE<gt>, L<http://ali.as/>
 
 =head1 SEE ALSO
 
@@ -452,7 +451,8 @@ L<GD::Graph>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002 Adam Kennedy. All rights reserved.
+Copyright 2002 - 2006 Adam Kennedy.
+
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
