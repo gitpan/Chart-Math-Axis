@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Chart-Math-Axis
-version:             1.03
+version:             1.04
 abstract:            An algorithm to find good values for chart axis
 license:             ~
 generated_by:        ExtUtils::MakeMaker version 6.32
