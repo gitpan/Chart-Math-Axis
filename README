@@ -88,16 +88,21 @@ METHODS
     graph values yourself.
 
 SUPPORT
-    Contact the author
+    Bugs should be reported via the CPAN bug tracker
+
+    <http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Chart-Math-Axis>
+
+    For other issues, or commercial enhancement or support, contact the
+    author.
 
 AUTHOR
-    Adam Kennedy <adamk@cpan.org>, <http://ali.as/>
+    Adam Kennedy <adamk@cpan.org>
 
 SEE ALSO
-    GD::Graph
+    GD::Graph, <http://ali.as/>
 
 COPYRIGHT
-    Copyright 2002 - 2006 Adam Kennedy.
+    Copyright 2002 - 2008 Adam Kennedy.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
