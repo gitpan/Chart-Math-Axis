@@ -4,19 +4,19 @@ NAME
 
 SYNOPSIS
       # Create a new Axis
-      my $Axis = Chart::Math::Axis->new();
-
-      # Provide is some data to calculate on
-      $Axis->add_data( @dataset );
-
-      # Get the values for the axis
-      print "Top of axis: " . $Axis->top . "\n";
-      print "Bottom of axis: " . $Axis->bottom . "\n";
-      print "Tick interval: " . $Axis->interval_size . "\n";
-      print "Number of ticks: " . $Axis->ticks . "\n";
-
-      # Apply the axis directly to a GD::Graph.
-      $Axis->apply_to( $Graph );
+      my $axis = Chart::Math::Axis->new;
+      
+  # Provide is some data to calculate on
+      $axis->add_data( @dataset );
+      
+  # Get the values for the axis
+      print "Top of axis: "     . $axis->top           . "\n";
+      print "Bottom of axis: "  . $axis->bottom        . "\n";
+      print "Tick interval: "   . $axis->interval_size . "\n";
+      print "Number of ticks: " . $axis->ticks         . "\n";
+      
+  # Apply the axis directly to a GD::Graph.
+      $axis->apply_to( $graph );
 
 DESCRIPTION
     Chart::Math::Axis implements in a generic way an algorithm for finding a
@@ -29,26 +29,29 @@ DESCRIPTION
     you should think of 'top' as 'right', and 'bottom' as 'left'.
 
 METHODS
-  new( [ @dataset ] )
+  new
+      my $null = Chart::Math::Axis->new;
+      my $full = Chart::Math::Axis->new( @dataset );
+
     The "new" method creates a new "Chart::Math::Axis" object. Any arguments
     passed to the constructor are used as dataset values. Whenever the
     object has some values on which to work, it will calculate the axis. If
     the object is created with no values, most methods will return undef.
 
-  max()
+  max
     Returns the maximum value in the dataset.
 
-  min()
+  min
     Returns the minimum value in the dataset.
 
-  top()
+  top
     The "top" method returns the value that should be the top of the axis.
 
-  bottom()
+  bottom
     The "bottom" method returns the value that should be the bottom of the
     axis.
 
-  maximum_intervals()
+  maximum_intervals
     Although Chart::Math::Axis can work out scale and intervals, it doesn't
     know how many pixels you might need, how big labels etc are, so it can
     determine the tick density you are going to need. The
@@ -58,29 +61,35 @@ METHODS
     To change this value, see the "set_maximum_intervals" method. The
     default for the maximum number of intervals is 10.
 
-  interval_size()
+  interval_size
     The "interval_size" method returns the interval size in dataset terms.
 
-  ticks()
+  ticks
     The "ticks" method returns the number of intervals that the
     top/bottom/size values will result in.
 
-  add_data( @dataset )
+  add_data
+      $self->add_data( @dataset );
+
     The "add_data" method allows you to provide data that the object should
     be aware of when calculating the axis. In fact, you can add additional
     data at any time, and the axis will be updated as needed.
 
-  set_maximum_intervals( $intervals )
+  set_maximum_intervals
+      $self->set_maximum_intervals( $intervals );
+
     The "set_maximum_intervals" method takes an argument and uses it as the
     maximum number of ticks the axis is allowed to have.
 
-  include_zero()
+  include_zero
     If you have a dataset something like ( 10, 11, 12 ) the bottom of the
     axis will probably be somewhere around 9 or 8. That is, it won't show
     the zero axis. If you want to force the axis to include zero, use this
     method to do so.
 
-  apply_to( $gd_graph_object )
+  apply_to
+      $self->apply_to( $gd_graph_object )
+
     The "apply_to" method is intended to provide a series of shortcuts for
     automatically applying an axis to a graph of a know type. At the
     present, this will change only the Y axis of a GD::Graph object. This
@@ -102,7 +111,7 @@ SEE ALSO
     GD::Graph, <http://ali.as/>
 
 COPYRIGHT
-    Copyright 2002 - 2008 Adam Kennedy.
+    Copyright 2002 - 2011 Adam Kennedy.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
